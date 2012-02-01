@@ -22,8 +22,18 @@
 (in-package :usort)
 
 ;;;
-;;; quicksort
+;;; quicksort optimizations 
 ;;;
+;;; included:
+;;; - hoare style partition to better deal with duplicate elements
+;;; - pivot picked with deterministic median-of-3 
+;;; - tail call loop to avoid second recursive call
+;;; - always sorts first the smallest partition 
+;;;
+;;; not included:
+;;; - use of insertion sort for very small size partitions
+;;;   reason: it didn't provided any major speedup
+;;; 
 
 (defun quicksort  (sequence predicate &key key)
   (%quicksort sequence 0 (1- (length sequence)) predicate (or key #'identity))
@@ -49,7 +59,7 @@
 	     (rotatef (aref sequence p) (aref sequence start))
 	     (block partition-loop
 	       (loop 
-		 (loop 
+		 (loop
 		   (unless (> (decf j) i) (return-from partition-loop))
 		   (when (funcall predicate 
 				  (funcall key (aref sequence j)) 
