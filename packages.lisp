@@ -23,5 +23,6 @@
   (:use :cl)
   (:documentation "Portable and optimized sorting algorithms.")
   (:export 
+   #:insertion-sort
    #:quicksort
    ))

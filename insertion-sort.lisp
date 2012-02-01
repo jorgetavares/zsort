@@ -19,14 +19,33 @@
 ;;;; TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ;;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(defsystem :usort
-    :description "Portable and optimized sorting algorithms."
-    :version "0.1"  
-    :author "Jorge Tavares <jorge.tavares@ieee.org>"  
-    :licence "MIT"  
-    :serial t
-    :components ((:file "packages") 
-		 (:file "insertion-sort")
-		 (:file "quicksort")
-		 (:static-file "README")
-		 (:static-file "LICENSE")))
+(in-package :usort)
+
+;;;
+;;; insertion sort
+;;;
+
+(defun insertion-sort  (sequence predicate &key key)
+  (%insertion-sort sequence 0 (length sequence) predicate (or key #'identity))
+  sequence)
+
+(defun %insertion-sort (sequence start end predicate key)
+  (declare (type function predicate key)
+	   (type fixnum start end)
+	   (type simple-vector sequence)
+	   (optimize (speed 3) (safety 0)))
+  ;; the start arg is actually not necessary but it is included
+  ;; to facilitate the use of insertion sort in other sorting 
+  ;; algorithms like quicksort with insertion for small values
+  (loop for j from (1+ start) below end 
+	do (let* ((pivot (aref sequence j))
+		  (data (funcall key pivot))
+		  (i (1- j)))
+	     (declare (type fixnum i))
+	     (loop while (and (>= i start) 
+			      (funcall predicate data (funcall key (aref sequence i))))
+		   do (setf (aref sequence (1+ i)) (aref sequence i)
+			    i (1- i)))
+	     (setf (aref sequence (1+ i)) pivot))))
+
+
