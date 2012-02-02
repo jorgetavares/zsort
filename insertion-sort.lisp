@@ -26,26 +26,32 @@
 ;;;
 
 (defun insertion-sort  (sequence predicate &key key)
-  (%insertion-sort sequence 0 (length sequence) predicate (or key #'identity))
-  sequence)
+  (let ((end (length sequence))
+	(valid-key (or key #'identity)))
+    (dispatch %insertion-sort-body predicate valid-key sequence 0 end)
+    sequence))
 
-(defun %insertion-sort (sequence start end predicate key)
-  (declare (type function predicate key)
-	   (type fixnum start end)
-	   (type simple-vector sequence)
-	   (optimize (speed 3) (safety 0)))
-  ;; the start arg is actually not necessary but it is included
-  ;; to make it easier to use insertion sort in other sorting 
-  ;; algorithms such as quicksort
-  (loop for j from (1+ start) below end 
-	do (let* ((pivot (aref sequence j))
-		  (data (funcall key pivot))
-		  (i (1- j)))
-	     (declare (type fixnum i))
-	     (loop while (and (>= i start) 
-			      (funcall predicate data (funcall key (aref sequence i))))
-		   do (setf (aref sequence (1+ i)) (aref sequence i)
-			    i (1- i)))
-	     (setf (aref sequence (1+ i)) pivot))))
+(defmacro %insertion-sort-body (type ref predicate key sequence start end)
+  (alexandria:with-gensyms (i j pivot data)
+    `(declare (type function ,predicate ,key)
+	      (type fixnum ,start ,end)
+	      (type ,type ,sequence)
+	      (optimize (speed 3) (safety 0)))
+    ;; the start arg is actually not necessary but it is included
+    ;; to make it easier to use insertion sort in other sorting 
+    ;; algorithms such as quicksort
+    `(loop for ,j from (1+ ,start) below ,end 
+	   do (let* ((,pivot (,ref ,sequence ,j))
+		     (,data (funcall ,key ,pivot))
+		     (,i (1- ,j)))
+		(declare (type fixnum ,i))
+		(loop while (and (>= ,i ,start) 
+				 (funcall ,predicate ,data (funcall ,key (,ref ,sequence ,i))))
+		      do (setf (,ref ,sequence (1+ ,i)) (,ref ,sequence ,i)
+			       ,i (1- ,i)))
+		(setf (,ref ,sequence (1+ ,i)) ,pivot)))))
+
+
+
 
 

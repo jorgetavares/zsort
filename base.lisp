@@ -1,6 +1,3 @@
-;;;; Copyright (c) 2012 Jorge Tavares <jorge.tavares@ieee.org>
-;;;;
-;;;; Permission is hereby granted, free of charge, to any person obtaining
 ;;;; a copy of this software and associated documentation files (the
 ;;;; "Software"), to deal in the Software without restriction, including
 ;;;; without limitation the rights to use, copy, modify, merge, publish,
@@ -19,16 +16,16 @@
 ;;;; TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ;;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(defsystem :usort
-    :description "Portable and specific sorting algorithms."
-    :version "0.1"  
-    :author "Jorge Tavares <jorge.tavares@ieee.org>"  
-    :licence "MIT" 
-    :depends-on (alexandria)
-    :serial t
-    :components ((:file "packages") 
-		 (:file "base")
-		 (:file "insertion-sort")
-		 (:file "quicksort")
-		 (:static-file "README")
-		 (:static-file "LICENSE")))
+(in-package :usort)
+
+;;;
+;;; base stuff
+;;;
+
+(defmacro dispatch (body predicate key sequence &rest args)
+  `(typecase ,sequence
+     (string (,body string char ,predicate ,key ,sequence ,@args))
+     (simple-vector (,body simple-vector svref ,predicate ,key ,sequence ,@args))
+     (array (,body array aref ,predicate ,key ,sequence ,@args))
+     (list (,body list elt ,predicate ,key ,sequence ,@args))))
+
