@@ -20,7 +20,7 @@
 ;;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (defsystem :usort
-    :description "Portable and optimized sorting algorithms."
+    :description "Portable and specific sorting algorithms."
     :version "0.1"  
     :author "Jorge Tavares <jorge.tavares@ieee.org>"  
     :licence "MIT"  

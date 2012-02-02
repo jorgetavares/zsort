@@ -35,8 +35,8 @@
 	   (type simple-vector sequence)
 	   (optimize (speed 3) (safety 0)))
   ;; the start arg is actually not necessary but it is included
-  ;; to facilitate the use of insertion sort in other sorting 
-  ;; algorithms like quicksort with insertion for small values
+  ;; to make it easier to use insertion sort in other sorting 
+  ;; algorithms such as quicksort
   (loop for j from (1+ start) below end 
 	do (let* ((pivot (aref sequence j))
 		  (data (funcall key pivot))

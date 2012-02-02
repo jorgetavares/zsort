@@ -21,7 +21,7 @@
 
 (defpackage :usort
   (:use :cl)
-  (:documentation "Portable and optimized sorting algorithms.")
+  (:documentation "Portable and specific sorting algorithms.")
   (:export 
    #:insertion-sort
    #:quicksort
