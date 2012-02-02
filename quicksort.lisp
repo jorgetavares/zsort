@@ -22,11 +22,10 @@
 (in-package :usort)
 
 ;;;
-;;; quicksort
+;;; quicksort algorithm
 ;;;
 ;;; optimizations included:
 ;;; - hoare style partition to better deal with duplicate elements
-;;; - pivot picked with deterministic median-of-3 
 ;;; - tail call loop to avoid second recursive call
 ;;; - always sorts first the smallest partition 
 ;;;
@@ -35,77 +34,92 @@
 ;;;   reason: it didn't provided any major speedup
 ;;; 
 
-(defun quicksort  (sequence predicate &key key)
-  (%quicksort sequence 0 (1- (length sequence)) predicate (or key #'identity))
-  sequence)
+(defmacro %quicksort-body (type ref mpredicate mkey msequence mstart mend pick-pivot)
+  (alexandria:with-gensyms (quicksort-call predicate key sequence start end i j pivot pivot-data pivot-key)
+    `(labels ((,quicksort-call (,sequence ,start ,end ,predicate ,key)
+		(declare (type function ,predicate ,key)
+			 (type fixnum ,start ,end)
+			 (type ,type ,sequence)
+			 (optimize (speed 3) (safety 0)))
+		;; the while loop avoids the second recursive call 
+		;; to quicksort made at the end of the loop body 
+		(loop while (< ,start ,end)
+		      do (let* ((,i ,start)
+				(,j (1+ ,end))
+				;; picks the pivot according to the given strategy
+				(,pivot (,pick-pivot ,start ,end))
+				(,pivot-data (,ref ,sequence ,pivot))
+				(,pivot-key (funcall ,key ,pivot-data)))
+			   (declare (type fixnum ,i ,j ,pivot))
+			   (rotatef (,ref ,sequence ,pivot) (,ref ,sequence ,start))
+			   ;; two-way partitioning
+			   (block partition-loop
+			     (loop 
+			       (loop 
+				 (unless (> (decf ,j) ,i) (return-from partition-loop))
+				 (when (funcall ,predicate 
+						(funcall ,key (,ref ,sequence ,j)) ,pivot-key) (return)))
+			       (loop
+				 (unless (< (incf ,i) ,j) (return-from partition-loop))
+				 (unless (funcall ,predicate 
+						  (funcall ,key (,ref ,sequence ,i)) ,pivot-key) (return)))
+			       (rotatef (,ref ,sequence ,i) (,ref ,sequence ,j))))
+			   (setf (,ref ,sequence ,start) (,ref ,sequence ,j)
+				 (,ref ,sequence ,j) ,pivot-data)
+			   ;; check each partition size and pick the smallest one
+			   ;; this way the stack depth worst-case is Theta(lgn)
+			   (if (< (- ,j ,start) (- ,end ,j))
+			       (progn 
+				 (,quicksort-call ,sequence ,start (1- ,j) ,predicate ,key)
+				 (setf ,start (1+ ,j)))
+			       (progn 
+				 (,quicksort-call ,sequence (1+ ,j) ,end ,predicate ,key)
+				 (setf ,end (1- ,j))))))))
+       (,quicksort-call ,msequence ,mstart ,mend ,mpredicate ,mkey))))
 
-(defun %quicksort (sequence start end predicate key)
+
+;;;
+;;; deterministic quicksort
+;;;
+;;; - the pivot is chosen with an adapted median-of-3 method
+;;;   instead of picking 3 random numbers and use the middle
+;;;   value, the pivot is picked by the median of start and
+;;;   end. this way we avoid the use of the random generator
+
+(defun quicksort (sequence predicate &key key)
+  (let ((end (1- (length sequence)))
+	(valid-key (or key #'identity)))
+    (dispatch %quicksort-body predicate valid-key sequence 0 end median-pivot)
+    sequence))
+			
+(defun median-pivot (start end)
   (declare (type fixnum start end)
-	   (type function predicate key)
-	   (type simple-vector sequence)
-	   (optimize (speed 3) (safety 0)))
-  ;; the while loop avoids the second recursive call 
-  ;; to quicksort made at the end of the loop body 
-  (loop while (< start end)
-	do (let* ((i start)
-		  (j (1+ end))
-		  ;; the pivot is chosen with an adapted median-of-3 method
-		  ;; instead of picking 3 random numbers and use the middle
-		  ;; value, the pivot is picked by the median of start and
-		  ;; end. this way we avoid the use of the random generator
-		  (pivot (+ start (ash (- end start) -1)))
-		  (pivot-data (aref sequence pivot))
-		  (pivot-key (funcall key pivot-data)))
-	     (declare (type fixnum i j pivot))
-	     (rotatef (aref sequence pivot) (aref sequence start))
-	     (block partition-loop
-	       (loop 
-		 (loop
-		   (unless (> (decf j) i) (return-from partition-loop))
-		   (when (funcall predicate 
-				  (funcall key (aref sequence j)) 
-				  pivot-key) (return)))
-		 (loop
-		   (unless (< (incf i) j) (return-from partition-loop))
-		   (unless (funcall predicate 
-				    (funcall key (aref sequence i)) 
-				    pivot-key) (return)))
-		 (rotatef (aref sequence i) (aref sequence j))))
-	     (setf (aref sequence start) (aref sequence j)
-		   (aref sequence j) pivot-data)
-	     ;; check each partition size and pick the smallest one
-	     ;; this way the stack depth worst-case is Theta(lgn)
-	     (if (< (- j start) (- end j))
-		 (progn 
-		   (%quicksort sequence start (1- j) predicate key)
-		   (setf start (1+ j)))
-		 (progn 
-		   (%quicksort sequence (1+ j) end predicate key)
-		   (setf end (1- j)))))))
+	   (optimize (speed 3) (space 0)))
+  (the fixnum (+ start (ash (- end start) -1))))
 
 
 ;;;
 ;;; randomized quicksort
 ;;;
-;;; - the only difference to the previous quicksort is in the 
-;;;   choice of the pivot. this sort uses a true median-of-3
-;;;   method where three pivots are randomly picked and uses 
-;;;   the one with the middle value. since this method uses 
+;;; - the choice of the pivot is made with a true median-of-3
+;;;   method where three pivots are randomly picked and the  
+;;;   one in the middle is the chosen value. since this method uses 
 ;;;   the random number generator and insertion sort to determine
 ;;;   the pivot, it might not be the best opton for certain 
 ;;;   applications and/or enviroments
-;;;
 
 (defun randomized-quicksort  (sequence predicate &key key)
-  (%randomized-quicksort sequence 0 (1- (length sequence)) predicate (or key #'identity))
-  sequence)
+  (let ((end (1- (length sequence)))
+	(valid-key (or key #'identity)))
+    (dispatch %quicksort-body predicate valid-key sequence 0 end median-of-3-pivot)
+    sequence))
 
 (defun %bounded-random (min max)
   (declare (type fixnum min max)
 	   (optimize (speed 3) (safety 0)))
   (the fixnum (+ min (random (the fixnum (+ (- max min) 1))))))
 		     
-(defun %median-of-3-pivot (start end)
+(defun median-of-3-pivot (start end)
   (declare (type fixnum start end)
 	   (optimize (speed 3) (safety 0))
 	   (inline %bounded-random insertion-sort))
@@ -115,48 +129,3 @@
     (declare (type simple-vector pivots))
     (insertion-sort pivots #'<)
     (aref pivots 1)))
-
-(defun %randomized-quicksort (sequence start end predicate key)
-  (declare (type fixnum start end)
-	   (type function predicate key)
-	   (type simple-vector sequence)
-	   (inline %median-of-3-pivot)
-	   (optimize (speed 3) (safety 0)))
-  ;; the while loop avoids the second recursive call 
-  ;; to quicksort made at the end of the loop body 
-  (loop while (< start end)
-	do (let* ((i start)
-		  (j (1+ end))
-		  ;; the pivot is chosen with median-of-3
-		  ;; it must be noted that CL:RANDOM is used
-		  ;; as well as insertion sort to determine
-		  ;; the middle value
-		  (pivot (%median-of-3-pivot start end))
-		  (pivot-data (aref sequence pivot))
-		  (pivot-key (funcall key pivot-data)))
-	     (declare (type fixnum i j pivot))
-	     (rotatef (aref sequence pivot) (aref sequence start))
-	     (block partition-loop
-	       (loop 
-		 (loop
-		   (unless (> (decf j) i) (return-from partition-loop))
-		   (when (funcall predicate 
-				  (funcall key (aref sequence j)) 
-				  pivot-key) (return)))
-		 (loop
-		   (unless (< (incf i) j) (return-from partition-loop))
-		   (unless (funcall predicate 
-				    (funcall key (aref sequence i)) 
-				    pivot-key) (return)))
-		 (rotatef (aref sequence i) (aref sequence j))))
-	     (setf (aref sequence start) (aref sequence j)
-		   (aref sequence j) pivot-data)
-	     ;; check each partition size and pick the smallest one
-	     ;; this way the stack depth worst-case is Theta(lgn)
-	     (if (< (- j start) (- end j))
-		 (progn 
-		   (%randomized-quicksort sequence start (1- j) predicate key)
-		   (setf start (1+ j)))
-		 (progn 
-		   (%randomized-quicksort sequence (1+ j) end predicate key)
-		   (setf end (1- j)))))))

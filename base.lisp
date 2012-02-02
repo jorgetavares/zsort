@@ -24,8 +24,13 @@
 
 (defmacro dispatch (body predicate key sequence &rest args)
   `(typecase ,sequence
-     (string (,body string char ,predicate ,key ,sequence ,@args))
-     (simple-vector (,body simple-vector svref ,predicate ,key ,sequence ,@args))
-     (array (,body array aref ,predicate ,key ,sequence ,@args))
-     (list (,body list elt ,predicate ,key ,sequence ,@args))))
+     (string 
+      (,body string char ,predicate ,key ,sequence ,@args))
+     (simple-vector 
+      (,body simple-vector svref ,predicate ,key ,sequence ,@args))
+     (array 
+      (,body array aref ,predicate ,key ,sequence ,@args))
+     (list 
+      (,body list elt ,predicate ,key ,sequence ,@args))))
+
 
