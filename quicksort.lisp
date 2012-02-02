@@ -53,25 +53,26 @@
 		  ;; instead of picking 3 random numbers and use the middle
 		  ;; value, the pivot is picked by the median of start and
 		  ;; end. this way we avoid the use of the random generator
-		  (p (+ start (ash (- end start) -1)))
-		  (x (aref sequence p)))
-	     (declare (type fixnum i j p))
-	     (rotatef (aref sequence p) (aref sequence start))
+		  (pivot (+ start (ash (- end start) -1)))
+		  (pivot-data (aref sequence pivot))
+		  (pivot-key (funcall key pivot-data)))
+	     (declare (type fixnum i j pivot))
+	     (rotatef (aref sequence pivot) (aref sequence start))
 	     (block partition-loop
 	       (loop 
 		 (loop
 		   (unless (> (decf j) i) (return-from partition-loop))
 		   (when (funcall predicate 
 				  (funcall key (aref sequence j)) 
-				  (funcall key x)) (return)))
+				  pivot-key) (return)))
 		 (loop
 		   (unless (< (incf i) j) (return-from partition-loop))
 		   (unless (funcall predicate 
 				    (funcall key (aref sequence i)) 
-				    (funcall key x)) (return)))
+				    pivot-key) (return)))
 		 (rotatef (aref sequence i) (aref sequence j))))
 	     (setf (aref sequence start) (aref sequence j)
-		   (aref sequence j) x)
+		   (aref sequence j) pivot-data)
 	     ;; check each partition size and pick the smallest one
 	     ;; this way the stack depth worst-case is Theta(lgn)
 	     (if (< (- j start) (- end j))
@@ -130,25 +131,26 @@
 		  ;; it must be noted that CL:RANDOM is used
 		  ;; as well as insertion sort to determine
 		  ;; the middle value
-		  (p (%median-of-3-pivot start end))
-		  (x (aref sequence p)))
-	     (declare (type fixnum i j p))
-	     (rotatef (aref sequence p) (aref sequence start))
+		  (pivot (%median-of-3-pivot start end))
+		  (pivot-data (aref sequence pivot))
+		  (pivot-key (funcall key pivot-data)))
+	     (declare (type fixnum i j pivot))
+	     (rotatef (aref sequence pivot) (aref sequence start))
 	     (block partition-loop
 	       (loop 
 		 (loop
 		   (unless (> (decf j) i) (return-from partition-loop))
 		   (when (funcall predicate 
 				  (funcall key (aref sequence j)) 
-				  (funcall key x)) (return)))
+				  pivot-key) (return)))
 		 (loop
 		   (unless (< (incf i) j) (return-from partition-loop))
 		   (unless (funcall predicate 
 				    (funcall key (aref sequence i)) 
-				    (funcall key x)) (return)))
+				    pivot-key) (return)))
 		 (rotatef (aref sequence i) (aref sequence j))))
 	     (setf (aref sequence start) (aref sequence j)
-		   (aref sequence j) x)
+		   (aref sequence j) pivot-data)
 	     ;; check each partition size and pick the smallest one
 	     ;; this way the stack depth worst-case is Theta(lgn)
 	     (if (< (- j start) (- end j))
