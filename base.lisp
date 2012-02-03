@@ -22,15 +22,13 @@
 ;;; base stuff
 ;;;
 
-(defmacro dispatch (body predicate key sequence &rest args)
+(defmacro sort-dispatch (sort-body predicate key sequence &rest args)
   `(typecase ,sequence
-     (string 
-      (,body string char ,predicate ,key ,sequence ,@args))
-     (simple-vector 
-      (,body simple-vector svref ,predicate ,key ,sequence ,@args))
-     (array 
-      (,body array aref ,predicate ,key ,sequence ,@args))
-     (list 
-      (,body list elt ,predicate ,key ,sequence ,@args))))
-
-
+     (simple-string 
+      (,sort-body simple-string schar ,predicate ,key ,sequence ,@args))
+     (simple-vector
+      (,sort-body simple-vector svref ,predicate ,key ,sequence ,@args))
+     (array
+      (,sort-body array aref ,predicate ,key ,sequence ,@args))
+     (list
+      (,sort-body list elt ,predicate ,key ,sequence ,@args))))
