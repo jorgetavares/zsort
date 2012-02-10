@@ -22,38 +22,110 @@
 (in-package :zsort)
 
 ;;;
-;;; insertion sort
+;;; merge sort algorithm
 ;;;
+;;; - top-down merge sort based on CCL's implementation
+;;; - composed by two main macros: merge-sequences-body and merge-sort-body 
+;;; - merge-sequences handles the merge of two sequences into an auxiliary one
+;;; - merge-sort-body is the top-down algorithm which calls merge-sequences
+;;; 
+
+(defmacro merge-sequences-body (type ref a start-a end-a b start-b end-b aux start-aux predicate &optional key)
+  (alexandria:with-gensyms (i-a i-b i-aux v-a v-b k-a k-b merge-block) 
+    `(locally
+	 (declare (type fixnum ,start-a ,end-a ,start-b ,end-b ,start-aux)
+		  (type ,type ,a ,b)
+		  (type simple-vector ,aux)
+		  (type function ,predicate ,@(if key `(,key)))
+		  (optimize (speed 3) (space 0)))
+       (block ,merge-block
+	 (let ((,i-a ,start-a)
+	       (,i-b ,start-b)
+	       (,i-aux ,start-aux)
+	       ,v-a ,v-b ,k-a ,k-b)
+	   (declare (type fixnum ,i-a ,i-b ,i-aux))
+	   (cond ((eq ,start-a ,end-a)
+		  (when (eq ,start-b ,end-b)
+		    (return-from ,merge-block ,aux))
+		  (setf ,i-a ,start-b
+			,end-a ,end-b
+			,a ,b
+			,v-a (,ref ,a ,i-a)))
+		 ((eq ,start-b ,end-b)
+		  (setf ,i-a ,start-a
+			,v-a (,ref ,a ,i-a)))
+		 (t
+		  (setf ,v-a (,ref ,a ,i-a)
+			,v-b (,ref ,b ,i-b)
+			,@(if key 
+			      `(,k-a (funcall ,key ,v-a))
+			      `(,k-a ,v-a))
+			,@(if key 
+			      `(,k-b (funcall ,key ,v-b))
+			      `(,k-b ,v-b)))
+		  (loop 
+		    (if (funcall ,predicate ,k-b ,k-a)
+			(progn 
+			  (setf (svref ,aux ,i-aux) ,v-b
+				,i-aux (+ ,i-aux 1)
+				,i-b (+ ,i-b 1))
+			  (when (eq ,i-b ,end-b) (return))
+			  (setf ,v-b (,ref ,b ,i-b)
+				,@(if key 
+				      `(,k-b (funcall ,key ,v-b))
+				      `(,k-b ,v-b))))
+			(progn 
+			  (setf (svref ,aux ,i-aux) ,v-a
+				,i-aux (+ ,i-aux 1)
+				,i-a (+ ,i-a 1))
+			  (when (eq ,i-a ,end-a)
+			    (setf ,a ,b 
+				  ,i-a ,i-b 
+				  ,end-a ,end-b 
+				  ,v-a ,v-b)
+			    (return))
+			  (setf ,v-a (,ref ,a ,i-a)
+				,@(if key 
+				      `(,k-a (funcall ,key ,v-a))
+				      `(,k-a ,v-a))))))))
+	   (loop
+	     (setf (svref ,aux ,i-aux) ,v-a
+		   ,i-a (+ ,i-a 1))
+	     (when (eq ,i-a ,end-a) (return ,aux))
+	     (setf ,v-a (,ref ,a ,i-a)
+		   ,i-aux (+ ,i-aux 1))))))))
+
 
 (defmacro merge-sort-body (type ref mpredicate mkey msequence mstart mend)
-    (alexandria:with-gensyms (i j pivot data sequence start end predicate key)
-      `(locally
-	   (declare (optimize (speed 3) (space 0)))
-	 (labels ((insertion (,sequence ,start ,end ,predicate ,key)
-		    (declare (type function ,predicate ,@(if mkey `(,key)))
-			     (type fixnum ,start ,end)
-			     (type ,type ,sequence)
-			     ,@(unless mkey `((ignore ,key))))
-		    ;; the start arg is actually not necessary but it is included
-		    ;; to make it easier to use insertion sort in other sorting 
-		    ;; algorithms such as quicksort
-		    (loop for ,j from (1+ ,start) below ,end 
-			  do (let* ((,pivot (,ref ,sequence ,j))
-				    ,@(if mkey 
-					  `((,data (funcall ,key ,pivot)))
-					  `((,data ,pivot)))
-				    (,i (1- ,j)))
-			       (declare (type fixnum ,i))
-			       (loop while (and (>= ,i ,start) 
-						(funcall ,predicate 
-							 ,data 
-							 ,@(if mkey 
-							       `((funcall ,key (,ref ,sequence ,i)))
-							       `((,ref ,sequence ,i)))))
-				     do (setf (,ref ,sequence (1+ ,i)) (,ref ,sequence ,i)
-					      ,i (1- ,i)))
-			       (setf (,ref ,sequence (1+ ,i)) ,pivot)))))
-	   (insertion ,msequence ,mstart ,mend ,mpredicate ,mkey)))))
+  (alexandria:with-gensyms (merge-sort-call maux aux sequence start end predicate key mid direction)
+    `(locally
+	 (declare (optimize (speed 3) (space 0)))
+       (labels ((,merge-sort-call (,sequence ,start ,end ,predicate ,key ,aux ,direction)
+		  (declare (type function ,predicate ,@(if mkey `(,key)))
+			   (type fixnum ,start ,end)
+			   (type ,type ,sequence))
+		  (let ((,mid (the fixnum (+ ,start (ash (- ,end ,start) -1)))))
+		    (declare (type fixnum ,mid))
+		    (if (<= (- ,mid 1) ,start)
+			(unless ,direction (setf (,ref ,aux ,start) (,ref ,sequence ,start)))
+			(,merge-sort-call ,sequence ,start ,mid ,predicate ,key ,aux (not ,direction)))
+		    (if (>= (+ ,mid 1) ,end)
+			(unless ,direction (setf (,ref ,aux ,mid) (,ref ,sequence ,mid)))
+			(,merge-sort-call ,sequence ,mid ,end ,predicate ,key ,aux (not ,direction)))
+		    (unless ,direction (psetq ,sequence ,aux ,aux ,sequence))
+		    ,(if mkey
+			  `(merge-sequences-body ,type ,ref ,sequence ,start ,mid ,sequence 
+						 ,mid ,end ,aux ,start ,predicate ,key)
+			  `(merge-sequences-body ,type ,ref ,sequence ,start ,mid ,sequence 
+						 ,mid ,end ,aux ,start ,predicate)))))
+	 (let ((,maux (make-array ,mend)))
+	   (declare (type simple-vector ,maux))
+	   (,merge-sort-call ,msequence ,mstart ,mend ,mpredicate ,mkey ,maux nil))))))
+
+
+;;;
+;;; stable merge sort
+;;;
 
 (defun merge-sort (sequence predicate &key key)
   (let ((end (length sequence)))
@@ -61,88 +133,3 @@
 	(sort-dispatch merge-sort-body predicate key sequence 0 end)
 	(sort-dispatch merge-sort-body predicate nil sequence 0 end))
     sequence))
-
-;;;;;;;;;;; adapted from ccl
-
-(defun merge-ccl (sequence predicate key)
-  (declare (type simple-vector sequence)
-	   (type function predicate key)
-	   (optimize (speed 3) (space 0)))
-  (let ((start 0)
-	(end (length sequence)))
-    (declare (type fixnum start end))
-    (when (> end 1)
-      (let ((temp-array (make-array end)))
-	(declare (type simple-vector temp-array))
-	(merge-sort-sequence sequence start end predicate key temp-array nil))))
-  sequence)
-
-(defun merge-sort-sequence (sequence start end predicate key aux direction)
-  (declare (type fixnum start end)
-	   (type simple-vector sequence aux)
-	   (type function predicate key)
-	   (optimize (speed 3) (space 0)))
-  (let ((mid (+ start (ash (- end start) -1))))
-    (declare (type fixnum mid))
-    (if (<= (- mid 1) start)
-	(unless direction (setf (svref aux start) (svref sequence start)))
-	(merge-sort-sequence sequence start mid predicate key aux (not direction)))
-    (if (>= (+ mid 1) end)
-	(unless direction (setf (svref aux mid) (svref sequence mid)))
-	(merge-sort-sequence sequence mid end predicate key aux (not direction)))
-    (unless direction (psetq sequence aux aux sequence))
-    (merge-sequences sequence start mid sequence mid end aux start predicate key)))
-
-(defun merge-sequences (a start-a end-a b start-b end-b aux start-aux predicate key)
-  (declare (type fixnum start-a end-a start-b end-b start-aux)
-	   (type simple-vector a b aux)
-	   (type function predicate key)
-	   (optimize (speed 3) (space 0)))
-  (let ((i-a start-a)
-	(i-b start-b)
-	(i-aux start-aux)
-	v-a v-b k-a k-b)
-    (declare (type fixnum i-a i-b i-aux))
-    (cond ((eq start-a end-a)
-	   (when (eq start-b end-b)
-	     (return-from merge-sequences aux))
-	   (setf i-a start-b
-		 end-a end-b
-		 a b
-		 v-a (svref a i-a)))
-	  ((eq start-b end-b)
-	   (setf i-a start-a
-		 v-a (svref a i-a)))
-	  (t
-	   (setf v-a (svref a i-a)
-		 v-b (svref b i-b)
-		 k-a (if key (funcall key v-a) v-a)
-		 k-b (if key (funcall key v-b) v-b))
-	   (loop 
-	     (if (funcall predicate k-b k-a)
-		 (progn 
-		   (setf (svref aux i-aux) v-b
-			 i-aux (+ i-aux 1)
-			 i-b (+ i-b 1))
-		   (when (eq i-b end-b) (return))
-		   (setf v-b (svref b i-b)
-			 k-b (if key (funcall key v-b) v-b)))
-		 (progn 
-		   (setf (svref aux i-aux) v-a
-			 i-aux (+ i-aux 1)
-			 i-a (+ i-a 1))
-		   (when (eq i-a end-a)
-		     (setf a b 
-			   i-a i-b 
-			   end-a end-b 
-			   v-a v-b)
-		     (return))
-		   (setf v-a (svref a i-a)
-			 k-a (if key (funcall key v-a) v-a)))))))
-    (loop
-      (setf (svref aux i-aux) v-a
-	    i-a (+ i-a 1))
-      (when (eq i-a end-a) (return aux))
-      (setf v-a (svref a i-a)
-	    i-aux (+ i-aux 1)))))
-
