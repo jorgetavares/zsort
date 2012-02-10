@@ -19,8 +19,8 @@
 ;;;; TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ;;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(defsystem :usort
-    :description "Portable and specific sorting algorithms."
+(defsystem :zsort
+    :description "Portable and specialized sorting algorithms."
     :version "0.1"  
     :author "Jorge Tavares <jorge.tavares@ieee.org>"  
     :licence "MIT" 
@@ -30,5 +30,6 @@
 		 (:file "base")
 		 (:file "insertion-sort")
 		 (:file "quicksort")
+		 (:file "merge-sort")
 		 (:static-file "README")
 		 (:static-file "LICENSE")))

@@ -19,7 +19,7 @@
 ;;;; TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ;;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :usort)
+(in-package :zsort)
 
 ;;;
 ;;; quicksort algorithm
@@ -34,13 +34,16 @@
 ;;;   reason: it didn't provided any major speedup
 ;;; 
 
-(defmacro %quicksort-body (type ref mpredicate mkey msequence mstart mend pick-pivot)
+(defmacro quicksort-body (type ref mpredicate mkey msequence mstart mend pick-pivot)
   (alexandria:with-gensyms (quicksort-call predicate key sequence start end i j pivot pivot-data pivot-key)
-    `(labels ((,quicksort-call (,sequence ,start ,end ,predicate ,key)
-		(declare (type function ,predicate ,key)
-			 (type fixnum ,start ,end)
-			 (type ,type ,sequence)
-			 (optimize (speed 3) (safety 0)))
+    `(locally
+	 (declare (optimize (speed 3) (space 0)))
+       (labels ((,quicksort-call (,sequence ,start ,end ,predicate ,key)
+		  ;; there is no need to declare ignore of key since it
+		  ;; is needed on the recursive call of quicksort
+		  (declare (type function ,predicate ,@(if mkey `(,key)))
+			   (type fixnum ,start ,end)
+			   (type ,type ,sequence))
 		  ;; the while loop avoids the second recursive call 
 		  ;; to quicksort made at the end of the loop body 
 		  (loop while (< ,start ,end)
@@ -49,7 +52,9 @@
 				  ;; picks the pivot according to the given strategy
 				  (,pivot (,pick-pivot ,start ,end))
 				  (,pivot-data (,ref ,sequence ,pivot))
-				  (,pivot-key (funcall ,key ,pivot-data)))
+				  ,@(if mkey 
+					`((,pivot-key (funcall ,key ,pivot-data)))
+					`((,pivot-key ,pivot-data))))
 			     (declare (type fixnum ,i ,j ,pivot))
 			     (rotatef (,ref ,sequence ,pivot) (,ref ,sequence ,start))
 			     ;; two-way partitioning
@@ -58,11 +63,17 @@
 				 (loop 
 				   (unless (> (decf ,j) ,i) (return-from partition-loop))
 				   (when (funcall ,predicate 
-						  (funcall ,key (,ref ,sequence ,j)) ,pivot-key) (return)))
+						  ,@(if mkey 
+							`((funcall ,key (,ref ,sequence ,j)))
+							`((,ref ,sequence ,j)))
+						  ,pivot-key) (return)))
 				 (loop
 				   (unless (< (incf ,i) ,j) (return-from partition-loop))
 				   (unless (funcall ,predicate 
-						    (funcall ,key (,ref ,sequence ,i)) ,pivot-key) (return)))
+						    ,@(if mkey 
+							  `((funcall ,key (,ref ,sequence ,i)))
+							  `((,ref ,sequence ,i)))
+						    ,pivot-key) (return)))
 				 (rotatef (,ref ,sequence ,i) (,ref ,sequence ,j))))
 			     (setf (,ref ,sequence ,start) (,ref ,sequence ,j)
 				   (,ref ,sequence ,j) ,pivot-data)
@@ -75,7 +86,7 @@
 				 (progn 
 				   (,quicksort-call ,sequence (1+ ,j) ,end ,predicate ,key)
 				   (setf ,end (1- ,j))))))))
-       (,quicksort-call ,msequence ,mstart ,mend ,mpredicate ,mkey))))
+	 (,quicksort-call ,msequence ,mstart ,mend ,mpredicate ,mkey)))))
 
 
 ;;;
@@ -87,9 +98,10 @@
 ;;;   end. this way we avoid the use of the random generator
 
 (defun quicksort (sequence predicate &key key)
-  (let ((end (1- (length sequence)))
-	(valid-key (or key #'identity)))
-    (sort-dispatch %quicksort-body predicate valid-key sequence 0 end median-pivot)
+  (let ((end (1- (length sequence))))
+    (if key
+	(sort-dispatch quicksort-body predicate key sequence 0 end median-pivot)
+	(sort-dispatch quicksort-body predicate nil sequence 0 end median-pivot))
     sequence))
 			
 (defun median-pivot (start end)
@@ -109,9 +121,10 @@
 ;;;   applications and/or enviroments
 
 (defun randomized-quicksort  (sequence predicate &key key)
-  (let ((end (1- (length sequence)))
-	(valid-key (or key #'identity)))
-    (sort-dispatch %quicksort-body predicate valid-key sequence 0 end median-of-3-pivot)
+  (let ((end (1- (length sequence))))
+    (if key
+	(sort-dispatch quicksort-body predicate key sequence 0 end median-of-3-pivot)
+	(sort-dispatch quicksort-body predicate nil sequence 0 end median-of-3-pivot))
     sequence))
 
 (defun %bounded-random (min max)

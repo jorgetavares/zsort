@@ -19,10 +19,13 @@
 ;;;; TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ;;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :usort
+(defpackage :zsort
   (:use :cl)
-  (:documentation "Portable and specific sorting algorithms.")
+  (:documentation "Portable and specialized sorting algorithms.")
   (:export 
    #:insertion-sort
    #:quicksort
+   #:randomized-quicksort
+   #:merge-sort
+   #:merge-sort-vector
    ))
