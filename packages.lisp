@@ -27,5 +27,4 @@
    #:quicksort
    #:randomized-quicksort
    #:merge-sort
-   #:merge-sort-vector
    ))

@@ -37,21 +37,21 @@
 		  (type ,type ,a ,b)
 		  (type simple-vector ,aux)
 		  (type function ,predicate ,@(if key `(,key)))
-		  (optimize (speed 3) (space 0)))
+		  (optimize (speed 3) (safety 0)))
        (block ,merge-block
 	 (let ((,i-a ,start-a)
 	       (,i-b ,start-b)
 	       (,i-aux ,start-aux)
 	       ,v-a ,v-b ,k-a ,k-b)
 	   (declare (type fixnum ,i-a ,i-b ,i-aux))
-	   (cond ((eq ,start-a ,end-a)
-		  (when (eq ,start-b ,end-b)
-		    (return-from ,merge-block ,aux))
+	   (cond ((= ,start-a ,end-a)
+		  (when (= ,start-b ,end-b)
+		    (return-from ,merge-block))
 		  (setf ,i-a ,start-b
 			,end-a ,end-b
 			,a ,b
 			,v-a (,ref ,a ,i-a)))
-		 ((eq ,start-b ,end-b)
+		 ((= ,start-b ,end-b)
 		  (setf ,i-a ,start-a
 			,v-a (,ref ,a ,i-a)))
 		 (t
@@ -69,7 +69,7 @@
 			  (setf (svref ,aux ,i-aux) ,v-b
 				,i-aux (+ ,i-aux 1)
 				,i-b (+ ,i-b 1))
-			  (when (eq ,i-b ,end-b) (return))
+			  (when (= ,i-b ,end-b) (return))
 			  (setf ,v-b (,ref ,b ,i-b)
 				,@(if key 
 				      `(,k-b (funcall ,key ,v-b))
@@ -78,7 +78,7 @@
 			  (setf (svref ,aux ,i-aux) ,v-a
 				,i-aux (+ ,i-aux 1)
 				,i-a (+ ,i-a 1))
-			  (when (eq ,i-a ,end-a)
+			  (when (= ,i-a ,end-a)
 			    (setf ,a ,b 
 				  ,i-a ,i-b 
 				  ,end-a ,end-b 
@@ -91,7 +91,7 @@
 	   (loop
 	     (setf (svref ,aux ,i-aux) ,v-a
 		   ,i-a (+ ,i-a 1))
-	     (when (eq ,i-a ,end-a) (return ,aux))
+	     (when (= ,i-a ,end-a) (return))
 	     (setf ,v-a (,ref ,a ,i-a)
 		   ,i-aux (+ ,i-aux 1))))))))
 
@@ -99,12 +99,12 @@
 (defmacro merge-sort-body (type ref mpredicate mkey msequence mstart mend)
   (alexandria:with-gensyms (merge-sort-call maux aux sequence start end predicate key mid direction)
     `(locally
-	 (declare (optimize (speed 3) (space 0)))
+	 (declare (optimize (speed 3) (safety 0)))
        (labels ((,merge-sort-call (,sequence ,start ,end ,predicate ,key ,aux ,direction)
 		  (declare (type function ,predicate ,@(if mkey `(,key)))
 			   (type fixnum ,start ,end)
 			   (type ,type ,sequence))
-		  (let ((,mid (the fixnum (+ ,start (ash (- ,end ,start) -1)))))
+		  (let ((,mid (+ ,start (ash (- ,end ,start) -1))))
 		    (declare (type fixnum ,mid))
 		    (if (<= (- ,mid 1) ,start)
 			(unless ,direction (setf (,ref ,aux ,start) (,ref ,sequence ,start)))

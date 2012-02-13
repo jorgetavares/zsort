@@ -22,38 +22,40 @@
 (in-package :zsort)
 
 ;;;
-;;; insertion sort
+;;; insertion sort algorithm
 ;;;
 
-(defmacro insertion-sort-body (type ref mpredicate mkey msequence mstart mend)
-    (alexandria:with-gensyms (i j pivot data sequence start end predicate key)
-      `(locally
-	   (declare (optimize (speed 3) (space 0)))
-	 (labels ((insertion (,sequence ,start ,end ,predicate ,key)
-		    (declare (type function ,predicate ,@(if mkey `(,key)))
-			     (type fixnum ,start ,end)
-			     (type ,type ,sequence)
-			     ,@(unless mkey `((ignore ,key))))
-		    ;; the start arg is actually not necessary but it is included
-		    ;; to make it easier to use insertion sort in other sorting 
-		    ;; algorithms such as quicksort
-		    (loop for ,j from (1+ ,start) below ,end 
-			  do (let* ((,pivot (,ref ,sequence ,j))
-				    ,@(if mkey 
-					  `((,data (funcall ,key ,pivot)))
-					  `((,data ,pivot)))
-				    (,i (1- ,j)))
-			       (declare (type fixnum ,i))
-			       (loop while (and (>= ,i ,start) 
-						(funcall ,predicate 
-							 ,data 
-							 ,@(if mkey 
-							       `((funcall ,key (,ref ,sequence ,i)))
-							       `((,ref ,sequence ,i)))))
-				     do (setf (,ref ,sequence (1+ ,i)) (,ref ,sequence ,i)
-					      ,i (1- ,i)))
-			       (setf (,ref ,sequence (1+ ,i)) ,pivot)))))
-	   (insertion ,msequence ,mstart ,mend ,mpredicate ,mkey)))))
+(defmacro insertion-sort-body (type ref predicate key sequence start end)
+  (alexandria:with-gensyms (i j pivot data)
+    `(locally
+	 (declare (optimize (speed 3) (space 0))
+		  (type function ,predicate ,@(if key `(,key)))
+		  (type ,type ,sequence)
+		  ,@(unless key `((ignore ,key))))
+       ;; the start arg is actually not necessary but it is included
+       ;; to make it easier to use insertion sort in other sorting 
+       ;; algorithms such as quicksort
+       (loop for ,j from (1+ ,start) below ,end 
+	     do (let* ((,pivot (,ref ,sequence ,j))
+		       ,@(if key 
+			     `((,data (funcall ,key ,pivot)))
+			     `((,data ,pivot)))
+		       (,i (1- ,j)))
+		  (declare (type fixnum ,i))
+		  (loop while (and (>= ,i ,start) 
+				   (funcall ,predicate 
+					    ,data 
+					    ,(if key 
+						 `(funcall ,key (,ref ,sequence ,i))
+						 `(,ref ,sequence ,i))))
+			do (setf (,ref ,sequence (1+ ,i)) (,ref ,sequence ,i)
+				 ,i (1- ,i)))
+		  (setf (,ref ,sequence (1+ ,i)) ,pivot))))))
+
+
+;;;
+;;; insertion sort
+;;;
 
 (defun insertion-sort (sequence predicate &key key)
   (let ((end (length sequence)))

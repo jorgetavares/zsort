@@ -35,7 +35,7 @@
 ;;; 
 
 (defmacro quicksort-body (type ref mpredicate mkey msequence mstart mend pick-pivot)
-  (alexandria:with-gensyms (quicksort-call predicate key sequence start end i j pivot pivot-data pivot-key)
+  (alexandria:with-gensyms (quicksort-call partition-loop predicate key sequence start end i j pivot pivot-data pivot-key)
     `(locally
 	 (declare (optimize (speed 3) (space 0)))
        (labels ((,quicksort-call (,sequence ,start ,end ,predicate ,key)
@@ -58,21 +58,21 @@
 			     (declare (type fixnum ,i ,j ,pivot))
 			     (rotatef (,ref ,sequence ,pivot) (,ref ,sequence ,start))
 			     ;; two-way partitioning
-			     (block partition-loop
+			     (block ,partition-loop
 			       (loop 
 				 (loop 
-				   (unless (> (decf ,j) ,i) (return-from partition-loop))
+				   (unless (> (decf ,j) ,i) (return-from ,partition-loop))
 				   (when (funcall ,predicate 
-						  ,@(if mkey 
-							`((funcall ,key (,ref ,sequence ,j)))
-							`((,ref ,sequence ,j)))
+						  ,(if mkey 
+						       `(funcall ,key (,ref ,sequence ,j))
+						       `(,ref ,sequence ,j))
 						  ,pivot-key) (return)))
 				 (loop
-				   (unless (< (incf ,i) ,j) (return-from partition-loop))
+				   (unless (< (incf ,i) ,j) (return-from ,partition-loop))
 				   (unless (funcall ,predicate 
-						    ,@(if mkey 
-							  `((funcall ,key (,ref ,sequence ,i)))
-							  `((,ref ,sequence ,i)))
+						    ,(if mkey 
+							 `(funcall ,key (,ref ,sequence ,i))
+							 `(,ref ,sequence ,i))
 						    ,pivot-key) (return)))
 				 (rotatef (,ref ,sequence ,i) (,ref ,sequence ,j))))
 			     (setf (,ref ,sequence ,start) (,ref ,sequence ,j)
@@ -127,7 +127,7 @@
 	(sort-dispatch quicksort-body predicate nil sequence 0 end median-of-3-pivot))
     sequence))
 
-(defun %bounded-random (min max)
+(defun bounded-random (min max)
   (declare (type fixnum min max)
 	   (optimize (speed 3) (safety 0)))
   (the fixnum (+ min (random (the fixnum (+ (- max min) 1))))))
@@ -135,10 +135,10 @@
 (defun median-of-3-pivot (start end)
   (declare (type fixnum start end)
 	   (optimize (speed 3) (safety 0))
-	   (inline %bounded-random insertion-sort))
-  (let ((pivots (vector (%bounded-random start end)
-			(%bounded-random start end)
-			(%bounded-random start end))))
+	   (inline bounded-random insertion-sort))
+  (let ((pivots (vector (bounded-random start end)
+			(bounded-random start end)
+			(bounded-random start end))))
     (declare (type simple-vector pivots))
     (insertion-sort pivots #'<)
     (aref pivots 1)))
