@@ -19,9 +19,10 @@
 (in-package :zsort)
 
 ;;;
-;;; base stuff
+;;; common to all sorts
 ;;;
 
+;; generates all the sequence types
 (defmacro sort-dispatch (sort-body predicate key sequence &rest args)
   `(typecase ,sequence
      (simple-string 
