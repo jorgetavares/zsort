@@ -20,16 +20,16 @@
 ;;;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (defsystem :zsort
-    :description "Portable and specialized sorting algorithms."
-    :version "0.1"  
-    :author "Jorge Tavares <jorge.tavares@ieee.org>"  
-    :licence "MIT" 
-    :depends-on (alexandria)
-    :serial t
-    :components ((:file "packages") 
-		 (:file "base")
-		 (:file "insertion-sort")
-		 (:file "quicksort")
-		 (:file "merge-sort")
-		 (:static-file "README")
-		 (:static-file "LICENSE")))
+  :description "zsort is a collection of portable sorting algorithms."
+  :version "0.1"  
+  :author "Jorge Tavares <jorge.tavares@ieee.org>"  
+  :licence "MIT" 
+  :depends-on (alexandria)
+  :serial t
+  :components ((:file "packages") 
+	       (:file "base")
+	       (:file "insertion-sort")
+	       (:file "quicksort")
+	       (:file "merge-sort")
+	       (:static-file "README")
+	       (:static-file "LICENSE")))

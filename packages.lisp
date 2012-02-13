@@ -21,7 +21,7 @@
 
 (defpackage :zsort
   (:use :cl)
-  (:documentation "Portable and specialized sorting algorithms.")
+  (:documentation "zsort is a collection of portable sorting algorithms.")
   (:export 
    #:insertion-sort
    #:quicksort
