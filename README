@@ -1,17 +1,27 @@
 Overview
 --------------
+zsort is a collection of portable sorting algorithms. Common lisp provides the sort and stable-sort
+functions but these can have different algorithms implemented according to each implementation. Also, 
+the standard sorting function might not be the best for certain situation. This library aims to provide
+developers more options. Although for most situations the standard functions are more than enough, zsort
+can be a useful complement. 
 
-zsort is a collection of sorting algorithms.
 
-
-Notes
+Algorithms
 --------------
+- insertion sort
+- quicksort 
+- randommized quicksort
+- merge sort
 
-- Under development
+
+How to use
+--------------
+All sorts have the same syntax (<sort> sequence &key key) and return a sorted sequence. All the 
+functions sort destructively, i.e., keep a copy of the unsorted sequence if you wish to keep it.
 
 
 License
 --------------
-
 usort is available under an MIT-style license. See the LICENSE file.
 
