@@ -26,7 +26,6 @@
 ;;; - adapted from the original source in CMUCL 
 ;;;
 
-
 ;;; HEAPIFY, assuming both sons of root are heaps, percolates the root element
 ;;; through the sons to form a heap at root.  Root and max are zero based
 ;;; coordinates, but the heap algorithm only works on arrays indexed from 1
@@ -85,25 +84,23 @@
 ;;; heapsort
 ;;;
 
-(defmacro heapsort-body (type ref predicate mkey sequence mstart mend)
-  (with-gensyms (heapsort-call seq pred key start end i i-1)
-    `(flet ((,heapsort-call (,seq ,start ,end ,pred ,key)
-	      (declare (type fixnum ,start ,end)
-		       (type ,type ,seq))
-	      (build-heap ,seq ,ref ,end ,pred ,@(if mkey `(,key)))
-	      (do* ((,i ,end ,i-1)
-		    (,i-1 (1- ,i) (1- ,i-1)))
-		   ((zerop ,i) ,seq)
-		(declare (type fixnum ,i ,i-1))
-		(rotatef (,ref ,seq ,start) (,ref ,seq ,i))
-		(heapify ,seq ,ref ,start ,i-1 ,pred ,@(if mkey `(,key))))))
-       (,heapsort-call ,sequence ,mstart ,mend ,predicate ,mkey))))
+(defmacro heapsort-body (type ref predicate key sequence end)
+  (with-gensyms (i i-1)
+    `(locally
+	 (declare (type fixnum ,end)
+		  (type ,type ,sequence))
+       (build-heap ,sequence ,ref ,end ,predicate ,@(if key `(,key)))
+       (do* ((,i ,end ,i-1)
+	     (,i-1 (1- ,i) (1- ,i-1)))
+	    ((zerop ,i) ,sequence)
+	 (declare (type fixnum ,i ,i-1))
+	 (rotatef (,ref ,sequence 0) (,ref ,sequence ,i))
+	 (heapify ,sequence ,ref 0 ,i-1 ,predicate ,@(if key `(,key)))))))
   
-
 (defun heapsort (sequence predicate &key key)
   (let ((end (1- (length sequence))))
     (if key
-	(sort-dispatch heapsort-body predicate key sequence 0 end)
-	(sort-dispatch heapsort-body predicate nil sequence 0 end))
+	(sort-dispatch heapsort-body predicate key sequence end)
+	(sort-dispatch heapsort-body predicate nil sequence end))
     sequence))
   
