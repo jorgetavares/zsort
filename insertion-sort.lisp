@@ -28,10 +28,8 @@
 (defmacro insertion-sort-body (type ref predicate key sequence start end)
   (with-gensyms (i j pivot data)
     `(locally
-	 (declare (optimize (speed 3) (space 0))
-		  (type function ,predicate ,@(if key `(,key)))
-		  (type ,type ,sequence)
-		  ,@(unless key `((ignore ,key))))
+	 (declare (type function ,predicate ,@(if key `(,key)))
+		  (type ,type ,sequence))
        ;; the start arg is actually not necessary but it is included
        ;; to make it easier to use insertion sort in other sorting 
        ;; algorithms such as quicksort

@@ -36,8 +36,7 @@
 	 (declare (type fixnum ,start-a ,end-a ,start-b ,end-b ,start-aux)
 		  (type ,type ,a ,b)
 		  (type simple-vector ,aux)
-		  (type function ,predicate ,@(if key `(,key)))
-		  (optimize (speed 3) (safety 0)))
+		  (type function ,predicate ,@(if key `(,key))))
        (block ,merge-block
 	 (let ((,i-a ,start-a)
 	       (,i-b ,start-b)
@@ -99,28 +98,27 @@
 (defmacro merge-sort-body (type ref mpredicate mkey msequence mstart mend)
   (with-gensyms (merge-sort-call maux aux sequence start end predicate key mid direction)
     `(locally
-	 (declare (optimize (speed 3) (safety 0)))
-       (labels ((,merge-sort-call (,sequence ,start ,end ,predicate ,key ,aux ,direction)
-		  (declare (type function ,predicate ,@(if mkey `(,key)))
-			   (type fixnum ,start ,end)
-			   (type ,type ,sequence))
-		  (let ((,mid (+ ,start (ash (- ,end ,start) -1))))
-		    (declare (type fixnum ,mid))
-		    (if (<= (- ,mid 1) ,start)
-			(unless ,direction (setf (,ref ,aux ,start) (,ref ,sequence ,start)))
-			(,merge-sort-call ,sequence ,start ,mid ,predicate ,key ,aux (not ,direction)))
-		    (if (>= (+ ,mid 1) ,end)
-			(unless ,direction (setf (,ref ,aux ,mid) (,ref ,sequence ,mid)))
-			(,merge-sort-call ,sequence ,mid ,end ,predicate ,key ,aux (not ,direction)))
-		    (unless ,direction (psetq ,sequence ,aux ,aux ,sequence))
-		    ,(if mkey
-			  `(merge-sequences-body ,type ,ref ,sequence ,start ,mid ,sequence 
-						 ,mid ,end ,aux ,start ,predicate ,key)
-			  `(merge-sequences-body ,type ,ref ,sequence ,start ,mid ,sequence 
-						 ,mid ,end ,aux ,start ,predicate)))))
-	 (let ((,maux (make-array ,mend)))
-	   (declare (type simple-vector ,maux))
-	   (,merge-sort-call ,msequence ,mstart ,mend ,mpredicate ,mkey ,maux nil))))))
+	 (labels ((,merge-sort-call (,sequence ,start ,end ,predicate ,key ,aux ,direction)
+		    (declare (type function ,predicate ,@(if mkey `(,key)))
+			     (type fixnum ,start ,end)
+			     (type ,type ,sequence))
+		    (let ((,mid (+ ,start (ash (- ,end ,start) -1))))
+		      (declare (type fixnum ,mid))
+		      (if (<= (- ,mid 1) ,start)
+			  (unless ,direction (setf (,ref ,aux ,start) (,ref ,sequence ,start)))
+			  (,merge-sort-call ,sequence ,start ,mid ,predicate ,key ,aux (not ,direction)))
+		      (if (>= (+ ,mid 1) ,end)
+			  (unless ,direction (setf (,ref ,aux ,mid) (,ref ,sequence ,mid)))
+			  (,merge-sort-call ,sequence ,mid ,end ,predicate ,key ,aux (not ,direction)))
+		      (unless ,direction (psetq ,sequence ,aux ,aux ,sequence))
+		      ,(if mkey
+			   `(merge-sequences-body ,type ,ref ,sequence ,start ,mid ,sequence 
+						  ,mid ,end ,aux ,start ,predicate ,key)
+			   `(merge-sequences-body ,type ,ref ,sequence ,start ,mid ,sequence 
+						  ,mid ,end ,aux ,start ,predicate)))))
+	   (let ((,maux (make-array ,mend)))
+	     (declare (type simple-vector ,maux))
+	     (,merge-sort-call ,msequence ,mstart ,mend ,mpredicate ,mkey ,maux nil))))))
 
 
 ;;;
