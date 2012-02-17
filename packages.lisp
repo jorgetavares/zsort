@@ -22,9 +22,11 @@
 (defpackage :zsort
   (:use :cl)
   (:documentation "zsort is a collection of portable sorting algorithms.")
+  (:import-from	:alexandria :with-gensyms)
   (:export 
    #:insertion-sort
    #:quicksort
    #:randomized-quicksort
    #:merge-sort
+   #:heapsort
    ))

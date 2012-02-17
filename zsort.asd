@@ -31,5 +31,6 @@
 	       (:file "insertion-sort")
 	       (:file "quicksort")
 	       (:file "merge-sort")
+	       (:file "heapsort")
 	       (:static-file "README")
 	       (:static-file "LICENSE")))

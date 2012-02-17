@@ -35,7 +35,7 @@
 ;;; 
 
 (defmacro quicksort-body (type ref mpredicate mkey msequence mstart mend pick-pivot)
-  (alexandria:with-gensyms (quicksort-call partition-loop predicate key sequence start end i j pivot pivot-data pivot-key)
+  (with-gensyms (quicksort-call partition-loop predicate key sequence start end i j pivot pivot-data pivot-key)
     `(locally
 	 (declare (optimize (speed 3) (space 0)))
        (labels ((,quicksort-call (,sequence ,start ,end ,predicate ,key)

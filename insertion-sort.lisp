@@ -26,7 +26,7 @@
 ;;;
 
 (defmacro insertion-sort-body (type ref predicate key sequence start end)
-  (alexandria:with-gensyms (i j pivot data)
+  (with-gensyms (i j pivot data)
     `(locally
 	 (declare (optimize (speed 3) (space 0))
 		  (type function ,predicate ,@(if key `(,key)))

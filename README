@@ -8,12 +8,13 @@ options. Although for most situations the standard functions are more than enoug
 zsort could be a useful complement. 
 
 
-Algorithms
+Sort Algorithms
 --------------
-- insertion sort
+- insertion-sort
 - quicksort 
-- randomized quicksort
-- merge sort
+- randomized-quicksort
+- merge-sort
+- heapsort
 
 
 How to use
@@ -25,5 +26,5 @@ unsorted sequence if you wish to keep it.
 
 License
 --------------
-usort is available under an MIT-style license. See the LICENSE file.
+zsort is available under an MIT-style license. See the LICENSE file.
 

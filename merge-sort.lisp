@@ -31,7 +31,7 @@
 ;;; 
 
 (defmacro merge-sequences-body (type ref a start-a end-a b start-b end-b aux start-aux predicate &optional key)
-  (alexandria:with-gensyms (i-a i-b i-aux v-a v-b k-a k-b merge-block) 
+  (with-gensyms (i-a i-b i-aux v-a v-b k-a k-b merge-block) 
     `(locally
 	 (declare (type fixnum ,start-a ,end-a ,start-b ,end-b ,start-aux)
 		  (type ,type ,a ,b)
@@ -97,7 +97,7 @@
 
 
 (defmacro merge-sort-body (type ref mpredicate mkey msequence mstart mend)
-  (alexandria:with-gensyms (merge-sort-call maux aux sequence start end predicate key mid direction)
+  (with-gensyms (merge-sort-call maux aux sequence start end predicate key mid direction)
     `(locally
 	 (declare (optimize (speed 3) (safety 0)))
        (labels ((,merge-sort-call (,sequence ,start ,end ,predicate ,key ,aux ,direction)
