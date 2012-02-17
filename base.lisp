@@ -25,11 +25,11 @@
 ;; generates all the sequence types
 (defmacro sort-dispatch (sort-body predicate key sequence &rest args)
   `(typecase ,sequence
-     (simple-string 
-      (,sort-body simple-string schar ,predicate ,key ,sequence ,@args))
      (simple-vector
       (,sort-body simple-vector svref ,predicate ,key ,sequence ,@args))
-     (array
+     (vector
       (,sort-body array aref ,predicate ,key ,sequence ,@args))
      (list
-      (,sort-body list elt ,predicate ,key ,sequence ,@args))))
+      (,sort-body list elt ,predicate ,key ,sequence ,@args))
+     (sequence
+      (,sort-body sequence elt ,predicate ,key ,sequence ,@args))))
