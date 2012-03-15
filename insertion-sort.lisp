@@ -59,5 +59,5 @@
   (let ((end (length sequence)))
     (if key
 	(sort-dispatch insertion-sort-body predicate sequence key 0 end)
-	(sort-dispatch insertion-sort-body predicate sequence key 0 end))
+	(sort-dispatch insertion-sort-body predicate sequence nil 0 end))
     sequence))
