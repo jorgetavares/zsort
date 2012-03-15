@@ -84,7 +84,7 @@
 ;;; heapsort
 ;;;
 
-(defmacro heapsort-body (type ref predicate key sequence end)
+(defmacro heapsort-body (type ref predicate sequence key end)
   (with-gensyms (i i-1)
     `(locally
 	 (declare (type fixnum ,end)
@@ -100,7 +100,7 @@
 (defun heapsort (sequence predicate &key key)
   (let ((end (1- (length sequence))))
     (if key
-	(sort-dispatch heapsort-body predicate key sequence end)
-	(sort-dispatch heapsort-body predicate nil sequence end))
+	(sort-dispatch heapsort-body predicate sequence key end)
+	(sort-dispatch heapsort-body predicate sequence nil end))
     sequence))
   

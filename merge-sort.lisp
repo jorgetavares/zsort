@@ -95,7 +95,7 @@
 		   ,i-aux (+ ,i-aux 1))))))))
 
 
-(defmacro merge-sort-body (type ref mpredicate mkey msequence mstart mend)
+(defmacro merge-sort-body (type ref mpredicate msequence mkey mstart mend)
   (with-gensyms (merge-sort-call maux aux sequence start end predicate key mid direction)
     `(locally
 	 (labels ((,merge-sort-call (,sequence ,start ,end ,predicate ,key ,aux ,direction)
@@ -128,6 +128,6 @@
 (defun merge-sort (sequence predicate &key key)
   (let ((end (length sequence)))
     (if key
-	(sort-dispatch merge-sort-body predicate key sequence 0 end)
-	(sort-dispatch merge-sort-body predicate nil sequence 0 end))
+	(sort-dispatch merge-sort-body predicate sequence key 0 end)
+	(sort-dispatch merge-sort-body predicate sequence nil 0 end))
     sequence))

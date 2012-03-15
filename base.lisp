@@ -23,13 +23,13 @@
 ;;;
 
 ;; generates all the sequence types
-(defmacro sort-dispatch (sort-body predicate key sequence &rest args)
+(defmacro sort-dispatch (sort-body predicate sequence &rest args)
   `(typecase ,sequence
      (simple-vector
-      (,sort-body simple-vector svref ,predicate ,key ,sequence ,@args))
+      (,sort-body simple-vector svref ,predicate ,sequence ,@args))
      (vector
-      (,sort-body array aref ,predicate ,key ,sequence ,@args))
+      (,sort-body array aref ,predicate ,sequence ,@args))
      (list
-      (,sort-body list elt ,predicate ,key ,sequence ,@args))
+      (,sort-body list elt ,predicate ,sequence ,@args))
      (sequence
-      (,sort-body sequence elt ,predicate ,key ,sequence ,@args))))
+      (,sort-body sequence elt ,predicate ,sequence ,@args))))

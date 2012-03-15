@@ -25,7 +25,7 @@
 ;;; insertion sort algorithm
 ;;;
 
-(defmacro insertion-sort-body (type ref predicate key sequence start end)
+(defmacro insertion-sort-body (type ref predicate sequence key start end)
   (with-gensyms (i j pivot data)
     `(locally
 	 (declare (type function ,predicate ,@(if key `(,key)))
@@ -58,6 +58,6 @@
 (defun insertion-sort (sequence predicate &key key)
   (let ((end (length sequence)))
     (if key
-	(sort-dispatch insertion-sort-body predicate key sequence 0 end)
-	(sort-dispatch insertion-sort-body predicate nil sequence 0 end))
+	(sort-dispatch insertion-sort-body predicate sequence key 0 end)
+	(sort-dispatch insertion-sort-body predicate sequence key 0 end))
     sequence))

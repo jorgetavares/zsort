@@ -34,7 +34,7 @@
 ;;;   reason: it didn't provided any major speedup
 ;;; 
 
-(defmacro quicksort-body (type ref mpredicate mkey msequence mstart mend pick-pivot)
+(defmacro quicksort-body (type ref mpredicate msequence mkey mstart mend pick-pivot)
   (with-gensyms (quicksort-call partition-loop predicate key sequence start end i j pivot pivot-data pivot-key)
     `(locally
 	 (labels ((,quicksort-call (,sequence ,start ,end ,predicate ,key)
@@ -99,8 +99,8 @@
 (defun quicksort (sequence predicate &key key)
   (let ((end (1- (length sequence))))
     (if key
-	(sort-dispatch quicksort-body predicate key sequence 0 end median-pivot)
-	(sort-dispatch quicksort-body predicate nil sequence 0 end median-pivot))
+	(sort-dispatch quicksort-body predicate sequence key 0 end median-pivot)
+	(sort-dispatch quicksort-body predicate sequence nil 0 end median-pivot))
     sequence))
 			
 (defun median-pivot (start end)
@@ -121,8 +121,8 @@
 (defun randomized-quicksort  (sequence predicate &key key)
   (let ((end (1- (length sequence))))
     (if key
-	(sort-dispatch quicksort-body predicate key sequence 0 end median-of-3-pivot)
-	(sort-dispatch quicksort-body predicate nil sequence 0 end median-of-3-pivot))
+	(sort-dispatch quicksort-body predicate sequence key 0 end median-of-3-pivot)
+	(sort-dispatch quicksort-body predicate sequence nil 0 end median-of-3-pivot))
     sequence))
 
 (defun bounded-random (min max)
