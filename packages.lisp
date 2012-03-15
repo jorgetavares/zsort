@@ -29,4 +29,5 @@
    #:randomized-quicksort
    #:merge-sort
    #:heapsort
+   #:counting-sort
    ))
