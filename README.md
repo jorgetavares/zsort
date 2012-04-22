@@ -25,7 +25,7 @@ zsort is available via [Quicklisp](http://www.quicklisp.org) and that is the pre
 
 # How to Use
 
-All comparison sorts have the same syntax `(<sort> sequence &key key)` and return a sorted sequence. All the functions sort destructively, i.e., keep a copy of the unsorted sequence if you wish to keep it. 
+All comparison sorts have the same syntax `(<sort> sequence predicate &key key)` and return a sorted sequence. All the functions sort destructively, i.e., keep a copy of the unsorted sequence if you wish to keep it. 
 
 Counting sort only accepts sequences without key data and can be sorted in ascending or descending order, according to the value of the `:ascend` key (t for ascending and nil for descending). 
 
