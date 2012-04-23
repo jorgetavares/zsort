@@ -48,11 +48,11 @@
 ;;; counting sort
 ;;;
 
-(defun counting-sort (sequence &key (ascend t))
+(defun counting-sort (sequence &key (ascend t) min max)
   (let ((end (length sequence))
-	(min (reduce #'min sequence))
-	(max (reduce #'max sequence)))
+	(minimum (if min min (reduce #'min sequence)))
+	(maximum (if max max (reduce #'max sequence))))
     (if ascend
-	(sort-dispatch counting-sort-body t   sequence end min max)
-	(sort-dispatch counting-sort-body nil sequence end min max))
+	(sort-dispatch counting-sort-body t   sequence end minimum maximum)
+	(sort-dispatch counting-sort-body nil sequence end minimum maximum))
     sequence))
